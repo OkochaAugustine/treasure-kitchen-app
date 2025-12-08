@@ -27,7 +27,7 @@ import Navbar from "@/components/ui/Navbar";
 import { useState, useMemo } from "react";
 
 const PRICES = {
-  soups: { nsala: 2500, banga: 2500, oha: 2500, egusi: 2500, okra: 2500, atama: 2500, afang: 2500, rice: 2000 },
+  soups: { nsala: 1000, banga: 1000, oha: 1000, egusi: 1000, okra: 1000, atama: 1000, afang: 1000, rice: 2000 },
   swallow: { eba: 300, fufu: 500, semovita: 500 },
   meats: { goat: 500, beef: 400, chicken: 600, fish: 800 },
 };
@@ -275,9 +275,9 @@ export default function OrderPage() {
             <Text mb={3}>
               Transfer <strong>₦{totalPrice.toLocaleString()}</strong> to:
             </Text>
-            <Text>Account Name: Treasure Kitchen Ltd</Text>
-            <Text>Bank: GTBank</Text>
-            <Text>Account Number: 0123456789</Text>
+            <Text>Account Name: Osademe Joy</Text>
+            <Text>Bank: MoniePoint</Text>
+            <Text>Account Number: 5728261624</Text>
             <Text mt={4} fontWeight="bold">
               After payment, wait for admin confirmation.
             </Text>

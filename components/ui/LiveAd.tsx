@@ -21,7 +21,6 @@ type NewsItem = {
   url?: string;
 };
 
-// Simple helper to check if image URL is valid
 const isValidImage = (url: string) => url && url.startsWith("http");
 
 export default function LiveAd() {
@@ -36,15 +35,12 @@ export default function LiveAd() {
 
         if (!data.news || !Array.isArray(data.news)) return;
 
-        // Only keep articles with a valid image URL
         const articlesWithValidImages = data.news.filter(
           (item: NewsItem) => isValidImage(item.image)
         );
 
         if (articlesWithValidImages.length > 0) {
           setFirstArticle(articlesWithValidImages[0]);
-        } else {
-          console.warn("No articles with valid images found");
         }
       } catch (err) {
         console.error("Failed to fetch live news:", err);
@@ -57,10 +53,25 @@ export default function LiveAd() {
   if (!firstArticle) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="xl" isCentered>
+    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="md" isCentered>
       <ModalOverlay />
-      <ModalContent borderRadius="xl" overflow="hidden">
+
+      <ModalContent borderRadius="lg" overflow="hidden">
         <ModalCloseButton />
+
+        {/* AD LABEL */}
+        <Box bg="orange.400" w="full" p={1}>
+          <Text
+            fontSize="xs"
+            textAlign="center"
+            color="white"
+            fontWeight="bold"
+            letterSpacing="1px"
+          >
+            ADVERTISEMENT
+          </Text>
+        </Box>
+
         <ModalBody p={0}>
           <VStack spacing={0}>
             <Image
@@ -68,31 +79,41 @@ export default function LiveAd() {
               alt={firstArticle.title}
               objectFit="cover"
               w="full"
-              h="300px"
-              fallbackSrc="/images/hero-bg.jpg" // fallback in case image is broken
+              h="180px"        // 🔥 SMALLER IMAGE
+              fallbackSrc="/images/hero-bg.jpg"
             />
-            <Box p={4} bg="orange.50" w="full">
-              <Text fontSize="lg" fontWeight="bold">
+
+            <Box p={3} bg="orange.50" w="full">
+              <Text fontSize="md" fontWeight="bold">
                 {firstArticle.title}
               </Text>
+
               {firstArticle.description && (
                 <Text mt={2} fontSize="sm" color="gray.700">
                   {firstArticle.description}
                 </Text>
               )}
+
               {firstArticle.url && (
                 <Button
                   mt={3}
+                  size="sm"
                   colorScheme="orange"
                   as="a"
                   href={firstArticle.url}
                   target="_blank"
-                  rel="noopener noreferrer"
                 >
                   Read More
                 </Button>
               )}
-              <Button mt={3} ml={2} colorScheme="gray" onClick={() => setIsOpen(false)}>
+
+              <Button
+                mt={3}
+                ml={2}
+                size="sm"
+                colorScheme="gray"
+                onClick={() => setIsOpen(false)}
+              >
                 Close
               </Button>
             </Box>
