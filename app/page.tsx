@@ -13,113 +13,124 @@ import OrderNowCTA from "@/components/ui/OrderNowCTA";
 import Footer from "@/components/ui/Footer";
 import WhatsappFloater from "@/components/ui/WhatsappFloater";
 import Navbar from "@/components/ui/Navbar";
+import LiveAd from "@/components/ui/LiveAd"; // <-- updated, no props needed
 
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize Supabase client
+// ---------------- Initialize Supabase client ----------------
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type Order = {
+type Notification = {
   id: string;
-  soup: string;
-  plates: number;
-  swallow: Record<string, number>;
-  meattype: string;
-  meatqty: number;
-  totalprice: number;
-  payment_status: string;
+  phone: string;
+  message: string;
   created_at: string;
 };
 
 export default function HomePage() {
   const toast = useToast();
 
-  // Replace with current user's order ID from app logic
-  const [orderId, setOrderId] = useState<string | null>(
-    "5aede1cc-8731-472b-9734-b35a89e32de7"
-  );
+  const [userPhone, setUserPhone] = useState("08026394187");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-
-  // Debug log
-  console.log("[DEBUG] orderId:", orderId);
-  console.log("[DEBUG] paymentConfirmed:", paymentConfirmed);
-
-  // ---------------- Fetch latest order on page load ----------------
+  // ---------------- Fetch existing notifications ----------------
   useEffect(() => {
-    const fetchLatestOrder = async () => {
-      if (!orderId) return;
+    if (!userPhone) return;
 
+    const fetchNotifications = async () => {
       const { data, error } = await supabase
-        .from("order")
+        .from("notifications")
         .select("*")
-        .eq("id", orderId)
-        .single();
+        .eq("phone", userPhone)
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("[DEBUG] Failed to fetch latest order:", error);
-      } else {
-        console.log("[DEBUG] Latest order fetched:", data);
-        if (data?.payment_status === "confirmed") setPaymentConfirmed(true);
+        console.error("Failed to fetch notifications:", error);
+        return;
       }
+
+      setNotifications(data || []);
+
+      data?.forEach((n) => {
+        toast({
+          title: "Notification",
+          description: n.message,
+          status: "info",
+          duration: 10000,
+          isClosable: true,
+          position: "top-right",
+        });
+      });
     };
 
-    fetchLatestOrder();
-  }, [orderId]);
+    fetchNotifications();
+  }, [userPhone, toast]);
 
   // ---------------- Realtime subscription ----------------
   useEffect(() => {
-    if (!orderId) return;
-
-    console.log("[DEBUG] Setting up Realtime subscription...");
+    if (!userPhone) return;
 
     const channel = supabase
-      .channel(`order-${orderId}`)
+      .channel("notification-channel-" + userPhone)
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "INSERT",
           schema: "public",
-          table: "order",
-          filter: `id=eq.${orderId}`,
+          table: "notifications",
+          filter: `phone=eq.${userPhone}`,
         },
         (payload) => {
-          console.log("[DEBUG] Realtime payload received:", payload);
-          const order = payload.new as Order;
-          if (order.payment_status === "confirmed") {
-            setPaymentConfirmed(true);
+          const newNotification = payload.new as Notification;
 
-            toast({
-              title: "Payment Confirmed ✅",
-              description:
-                "Your order and payment have been confirmed! You will receive your order shortly.",
-              status: "success",
-              duration: 10000,
-              isClosable: true,
-              position: "top-right",
-            });
-          }
+          setNotifications((prev) => [newNotification, ...prev]);
+
+          toast({
+            title: "New Notification",
+            description: newNotification.message,
+            status: "info",
+            duration: 10000,
+            isClosable: true,
+            position: "top-right",
+          });
         }
       )
       .subscribe();
 
     return () => {
-      console.log("[DEBUG] Removing Realtime subscription...");
       supabase.removeChannel(channel);
     };
-  }, [orderId, toast]);
+  }, [userPhone, toast]);
 
-  // ------------------ Cancel notification ----------------
-  const handleCancelNotification = () => {
-    setPaymentConfirmed(false);
+  // ---------------- Mark all notifications as read ----------------
+  const markAllRead = async () => {
+    if (notifications.length === 0) return;
+
+    const ids = notifications.map((n) => n.id);
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .in("id", ids);
+
+    if (error) {
+      console.error("Failed to mark notifications as read:", error);
+      return;
+    }
+
+    setNotifications([]);
   };
 
   return (
     <Box>
       <Navbar />
+
+      {/* ---------------- Live Ad ---------------- */}
+      <LiveAd />
+
       <HeroSection />
       <MenuSection />
       <WhyPeopleLoveUs />
@@ -128,30 +139,48 @@ export default function HomePage() {
       <OurChefs />
       <OrderNowCTA />
 
-      {/* ------------------ Payment Confirmation Screen ------------------ */}
-      {paymentConfirmed && (
+      {/* ---------------- Notification Panel ---------------- */}
+      {notifications.length > 0 && (
         <Box
           position="fixed"
-          top="20%"
-          left="50%"
-          transform="translateX(-50%)"
-          bg="green.500"
-          color="white"
-          p={6}
-          borderRadius="lg"
-          shadow="lg"
-          zIndex={999}
+          top="12%"
+          right="2%"
+          width="300px"
+          maxHeight="80vh"
+          overflowY="auto"
+          bg="white"
+          shadow="xl"
+          borderRadius="md"
+          p={4}
+          zIndex={9999}
         >
-          <Text fontWeight="bold" mb={2}>
-            ✅ Payment Confirmed!
+          <Text fontWeight="bold" mb={2} fontSize="lg">
+            Notifications
           </Text>
-          <Text mb={3}>
-            Your order and payment have been confirmed! You will receive your
-            order shortly.
-          </Text>
-          <Button colorScheme="red" onClick={handleCancelNotification}>
-            Cancel
+
+          <Button
+            size="sm"
+            mb={3}
+            colorScheme="green"
+            variant="solid"
+            onClick={markAllRead}
+          >
+            Mark all as read
           </Button>
+
+          {notifications.map((n) => (
+            <Box
+              key={n.id}
+              p={3}
+              mb={2}
+              borderRadius="md"
+              bg="gray.100"
+              shadow="sm"
+              fontSize="sm"
+            >
+              {n.message}
+            </Box>
+          ))}
         </Box>
       )}
 

@@ -24,6 +24,16 @@ export default function Footer() {
             <Icon as={FaTwitter} w={6} h={6} />
           </Link>
         </HStack>
+
+        {/* Phone and Address */}
+        <VStack align="start" spacing={1}>
+          <Text fontSize="md">
+            📞 Phone: <Link href="tel:09066534666" textDecor="underline">09066534666</Link>
+          </Text>
+          <Text fontSize="md">
+            📍 Address: Asaba, Delta State, Behind Jamb Office, Opkanam Road
+          </Text>
+        </VStack>
       </VStack>
 
       <Divider my={6} borderColor="gray.700" />

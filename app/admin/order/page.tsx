@@ -9,11 +9,13 @@ import {
   Badge,
   Button,
   Spinner,
+  useToast,
 } from "@chakra-ui/react";
 
 type Order = {
-  id: string; // UUID
+  id: string;
   phone: string;
+  location: string; // Added location
   soup: string;
   plates: number;
   swallow: Record<string, number>;
@@ -27,14 +29,20 @@ type Order = {
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const toast = useToast();
 
-  // Fetch all orders from the server
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/orders");
       const data = await res.json();
-      if (data.orders) setOrders(data.orders);
+
+      if (data.orders) {
+        setOrders(data.orders);
+      } else {
+        console.warn("No orders returned from API", data);
+      }
     } catch (err) {
       console.error("Failed to fetch orders", err);
     } finally {
@@ -42,23 +50,47 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // Handle admin confirming payment
-  const handleConfirmPayment = async (orderId: string) => {
+  const confirmPayment = async (orderId: string) => {
+    setUpdatingId(orderId);
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/confirm`, {
+      const res = await fetch(`/api/admin/orders/confirm`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId }),
       });
-      const data = await res.json();
+
+      const result = await res.json();
 
       if (res.ok) {
-        alert("✅ Payment confirmed!");
-        fetchOrders(); // Refresh list after update
+        toast({
+          title: "Payment confirmed",
+          description:
+            "Customer will receive notification and order will be processed.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+        fetchOrders();
       } else {
-        alert("Failed: " + data.error);
+        toast({
+          title: "Error",
+          description: result.error || "Failed to confirm payment",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("Unexpected error occurred.");
+      toast({
+        title: "Unexpected error",
+        description: "Could not confirm payment",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -66,7 +98,8 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, []);
 
-  if (loading) return <Spinner size="xl" mt={20} mx="auto" display="block" />;
+  if (loading)
+    return <Spinner size="xl" mt={20} mx="auto" display="block" />;
 
   return (
     <Box p={10}>
@@ -97,37 +130,27 @@ export default function AdminOrdersPage() {
               </Badge>
             </HStack>
 
+            <Text>📍 Location: {order.location || "Not provided"}</Text>
+            <Text>🥣 Soup: {order.soup} x {order.plates}</Text>
             <Text>
-              Soup: {order.soup} x {order.plates}
-            </Text>
-
-            <Text>
-              Swallow:{" "}
-              {Object.entries(order.swallow)
+              🍛 Swallow: {Object.entries(order.swallow || {})
                 .map(([k, v]) => `${k.toUpperCase()}:${v}`)
                 .join(", ")}
             </Text>
-
-            <Text>
-              Meat: {order.meattype} x {order.meatqty}
-            </Text>
-
-            <Text fontWeight="bold">
-              Total: ₦{order.totalprice.toLocaleString()}
-            </Text>
-
+            <Text>🍗 Meat: {order.meattype || "None"} x {order.meatqty}</Text>
+            <Text fontWeight="bold">Total: ₦{order.totalprice?.toLocaleString() || "0"}</Text>
             <Text fontSize="sm" color="gray.500">
-              Ordered: {new Date(order.created_at).toLocaleString()}
+              Ordered: {order.created_at ? new Date(order.created_at).toLocaleString() : "Unknown"}
             </Text>
 
             {order.payment_status === "pending" && (
               <Button
                 mt={3}
                 colorScheme="green"
-                size="sm"
-                onClick={() => handleConfirmPayment(order.id)}
+                isLoading={updatingId === order.id}
+                onClick={() => confirmPayment(order.id)}
               >
-                ✅ Confirm Payment
+                Confirm Payment
               </Button>
             )}
           </Box>

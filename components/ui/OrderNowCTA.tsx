@@ -9,11 +9,16 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { FaWhatsapp, FaPhoneAlt, FaArrowRight } from "react-icons/fa";
-import { useRouter } from "next/navigation"; // <-- import useRouter
+import { useRouter } from "next/navigation";
 
 export default function OrderNowCTA() {
   const textColor = useColorModeValue("white", "white");
-  const router = useRouter(); // <-- initialize router
+  const router = useRouter();
+
+  // No session logic needed here, middleware handles it
+  const handleOrderNow = () => {
+    router.push("/order"); // middleware will redirect to /register if needed
+  };
 
   return (
     <Box
@@ -61,7 +66,7 @@ export default function OrderNowCTA() {
             fontSize="lg"
             borderRadius="full"
             onClick={() =>
-              (window.location.href = "https://wa.me/2340000000000")
+              (window.location.href = "https://wa.me/+2349066534666")
             }
           >
             Order on WhatsApp
@@ -75,7 +80,7 @@ export default function OrderNowCTA() {
             py={6}
             fontSize="lg"
             borderRadius="full"
-            onClick={() => (window.location.href = "tel:+2340000000000")}
+            onClick={() => (window.location.href = "tel:+2349066534666")}
           >
             Call to Order
           </Button>
@@ -93,9 +98,9 @@ export default function OrderNowCTA() {
             _hover={{
               bg: "whiteAlpha.300",
             }}
-            onClick={() => router.push("/menu")} // <-- navigate to /menu
+            onClick={handleOrderNow} // middleware handles redirect
           >
-            View Full Menu
+            Order Now
           </Button>
         </HStack>
       </VStack>

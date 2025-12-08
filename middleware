@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const protectedRoutes = ["/dashboard", "/profile"]; // only real protected pages
+
+export async function middleware(req: NextRequest) {
+  // Skip /order completely
+  if (req.nextUrl.pathname.startsWith("/order")) {
+    return NextResponse.next();
+  }
+
+  // Your existing auth checks for other routes
+  if (protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))) {
+    const token = req.cookies.get("sb-access-token")?.value || null;
+
+    if (!token) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/register";
+      return NextResponse.redirect(url);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/register";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/dashboard/:path*", "/profile/:path*"], // only protect real pages
+};

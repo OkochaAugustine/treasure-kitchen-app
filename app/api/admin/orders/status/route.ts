@@ -1,25 +1,21 @@
+// api/admin/orders/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const phone = searchParams.get("phone");
-
-  if (!phone) return NextResponse.json({ error: "Phone is required" }, { status: 400 });
+export async function GET() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  );
 
   const { data, error } = await supabase
-    .from("order")
-    .select("payment_status")
-    .eq("phone", phone)
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .from("orderz") // correct table name
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  return NextResponse.json(data[0]);
+  return NextResponse.json({ orders: data });
 }

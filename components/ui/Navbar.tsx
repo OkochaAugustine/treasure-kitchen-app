@@ -28,7 +28,9 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "About", href: "/about" },
     { label: "Menu", href: "/menu" },
+    // { label: "Blog", href: "/blog" }, // Added Blog page
     { label: "Riders", href: "/riders" },
   ];
 
@@ -87,13 +89,12 @@ export default function Navbar() {
               {link.label}
             </Text>
           ))}
-          {/* Desktop Order Now button */}
           <Button
             colorScheme="orange"
             bg="orange.400"
             _hover={{ bg: "orange.500", transform: "scale(1.05)" }}
             transition="all 0.2s"
-            onClick={() => router.push("/order")} // <-- Navigate to order page
+            onClick={() => router.push("/order")}
           >
             Order Now
           </Button>
@@ -125,7 +126,6 @@ export default function Navbar() {
                       {link.label}
                     </Button>
                   ))}
-                  {/* Mobile Order Now button */}
                   <Button
                     w="full"
                     colorScheme="orange"
